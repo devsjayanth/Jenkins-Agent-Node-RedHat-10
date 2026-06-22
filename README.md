@@ -5,19 +5,18 @@ Guide including kernel modules, sysctl, firewalld, and SELinux configurations re
 *Run on your **Jenkins Master/Controller**.*
 
 ```bash
-#Create the .ssh directory for Jenkins (if it doesn't exist)
+# 1. Create the .ssh directory
 sudo mkdir -p /var/lib/jenkins/.ssh
 sudo chown jenkins:jenkins /var/lib/jenkins/.ssh
 sudo chmod 700 /var/lib/jenkins/.ssh
-```
 
-*(Note: If your Jenkins installation uses a different home directory, you can find it by running `getent passwd jenkins | cut -d: -f6` and replace `/var/lib/jenkins` in the commands above with that path).*
+# 2. Generate the key directly as the jenkins user
+sudo -u jenkins ssh-keygen -t ed25519 -f /var/lib/jenkins/.ssh/id_ed25519 -N ""
 
-```bash
-sudo su - jenkins
-ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
-cat ~/.ssh/id_ed25519.pub
+# 3. Display the public key to copy it
+sudo cat /var/lib/jenkins/.ssh/id_ed25519.pub
 ```
+(Copy the output starting with ssh-ed25519 AAAA...)
 ### 2. Configure Jenkins User & SSH Access
 ```bash
 # Create user and add to docker group
