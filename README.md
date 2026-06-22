@@ -118,6 +118,9 @@ sudo chown -R jenkins:jenkins /home/jenkins/.ssh
 ### 8. Final Verification
 ```bash
 sudo su - jenkins
+```
+Verify
+```
 docker ps
 trivy --version
 kubectl version --client
