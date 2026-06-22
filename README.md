@@ -82,13 +82,13 @@ sudo dnf install -y trivy
 
 ### 6. Install kubectl
 ```bash
-sudo tee /etc/yum.repos.d/kubernetes.repo << 'EOF'
+sudo tee /etc/yum.repos.d/kubernetes.repo <<'EOF'
 [kubernetes]
 name=Kubernetes
-baseurl=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/
+baseurl=https://pkgs.k8s.io/core:/stable:/v1.32/rpm/
 enabled=1
 gpgcheck=1
-gpgkey=https://pkgs.k8s.io/core:/stable:/v1.31/rpm/repodata/repomd.xml.key
+gpgkey=https://pkgs.k8s.io/core:/stable:/v1.32/rpm/repodata/repomd.xml.key
 EOF
 sudo dnf install -y kubectl
 ```
