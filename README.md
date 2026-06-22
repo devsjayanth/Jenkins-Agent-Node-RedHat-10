@@ -171,3 +171,57 @@ sudo -u jenkins trivy --version
 sudo -u jenkins kubectl version --client
 sudo -u jenkins git --version
 ```
+---
+#Add your new RHEL 10 agent to the Jenkins UI.
+
+### 1. Get the Private Key (Run on Jenkins Master)
+Jenkins needs the **private** key to connect to the agent. Run this on your master to copy it:
+```bash
+sudo cat /var/lib/jenkins/.ssh/id_rsa
+```
+*(Copy the entire output, including `-----BEGIN OPENSSH PRIVATE KEY-----` and `-----END OPENSSH PRIVATE KEY-----`)*
+
+---
+
+### 2. Add SSH Credentials in Jenkins UI
+1. Go to **Manage Jenkins** -> **Credentials**.
+2. Click on **(global)** (or `System` -> `Global credentials`).
+3. Click **Add Credentials** on the left.
+4. Fill in the details:
+   * **Kind:** `SSH Username with private key`
+   * **Scope:** `Global`
+   * **ID:** `jenkins-rhel10-agent` (or any name you prefer)
+   * **Username:** `jenkins`
+   * **Private Key:** Select **Enter directly**, click **Add**, and paste the private key you copied in Step 1.
+5. Click **Create**.
+
+---
+
+### 3. Create the New Node
+1. Go to **Manage Jenkins** -> **Nodes**.
+2. Click **New Node** on the left.
+3. **Node name:** Enter a name (e.g., `rhel10-docker-agent`).
+4. **Type:** Select **Permanent Agent** and click **Create**.
+
+---
+
+### 4. Configure the Node
+Fill in the configuration page:
+
+* **Description:** `RHEL 10 Agent with Docker, Trivy, and kubectl`
+* **Number of executors:** `2` (or however many concurrent jobs you want)
+* **Remote root directory:** `/home/jenkins`
+* **Labels:** `docker trivy kubectl rhel10` (Use these in your Jenkinsfiles to target this node)
+* **Usage:** Select **Use this node as much as possible** (or "Only build jobs with label expressions" if you prefer).
+* **Launch method:** Select **Launch agents via SSH**.
+  * **Host:** Enter the **Agent's IP address** (e.g., `10.0.1.11`).
+  * **Credentials:** Select the `jenkins-rhel10-agent` credential you created in Step 2.
+  * **Host Key Verification Strategy:** Select **Non verifying Verification Strategy** (This prevents SSH host key prompts from blocking the connection).
+5. Scroll to the bottom and click **Save**.
+
+---
+
+### 5. Launch the Node
+1. You will be taken back to the Nodes page. The new node will likely say "Disconnected" or "Launch agent".
+2. Click on the node name, then click **Launch agent** (or click the "Relaunch" button if it failed initially).
+3. Watch the console output. If it ends with `Agent successfully connected and online`, your setup is complete!
