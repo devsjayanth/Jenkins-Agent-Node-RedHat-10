@@ -122,5 +122,4 @@ docker ps
 trivy --version
 kubectl version --client
 git --version
-exit
 ```
