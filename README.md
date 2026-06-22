@@ -6,20 +6,52 @@ Guide including kernel modules, sysctl, firewalld, and SELinux configurations re
 ## Part 1: Jenkins Master / Controller
 *Run these commands on your **Jenkins Master** to generate the SSH key.*
 
-### 1. Generate SSH Key
+Here is how to switch to a 4096-bit RSA key. 
+
+*(Note: RHEL 10 requires RSA keys to be at least 2048 bits and use SHA-2, so we will use 4096 bits to ensure it works perfectly).*
+
+### 1. Generate RSA Key on Jenkins Master
+*Run on your **Jenkins Master**.*
+
 ```bash
-# Create .ssh directory
-sudo mkdir -p /var/lib/jenkins/.ssh
-sudo chown jenkins:jenkins /var/lib/jenkins/.ssh
-sudo chmod 700 /var/lib/jenkins/.ssh
+# 1. Remove the old Ed25519 key to avoid confusion
+sudo rm -f /var/lib/jenkins/.ssh/id_ed25519 /var/lib/jenkins/.ssh/id_ed25519.pub
 
-# Generate the key directly as the jenkins user
-sudo -u jenkins ssh-keygen -t ed25519 -f /var/lib/jenkins/.ssh/id_ed25519 -N ""
+# 2. Generate a 4096-bit RSA key
+sudo -u jenkins ssh-keygen -t rsa -b 4096 -f /var/lib/jenkins/.ssh/id_rsa -N ""
 
-# Display the public key
-sudo cat /var/lib/jenkins/.ssh/id_ed25519.pub
+# 3. Display the new public key
+sudo cat /var/lib/jenkins/.ssh/id_rsa.pub
 ```
-> **Action:** Copy the entire output (starts with `ssh-ed25519 AAAA...`) for use in Part 2, Step 4.
+*(Copy the output starting with `ssh-rsa AAAA...`)*
+
+---
+
+### 2. Update the Agent Node
+*Run on your **Agent Node**.*
+
+```bash
+# Open the authorized_keys file
+sudo nano /home/jenkins/.ssh/authorized_keys
+```
+> **Inside nano:** Delete the old `ssh-ed25519` line and paste the new `ssh-rsa` line you just copied.
+> Save: `Ctrl+O`, `Enter`. Exit: `Ctrl+X`.
+
+*(The permissions and SELinux contexts we fixed earlier are still correct, so no need to change them).*
+
+---
+
+### 3. Test the Connection
+*Run on your **Jenkins Master**.*
+
+**CRITICAL:** Make sure you use the **Agent's actual IP address** this time, not the Master's IP! (Check the agent's IP by running `ip a` on the agent).
+
+```bash
+# Replace <AGENT_IP> with the actual IP of your agent node (e.g., 10.0.1.11)
+sudo -u jenkins ssh jenkins@<AGENT_IP>
+```
+
+If it connects without asking for a password, you are good to go! Type `exit` to disconnect.
 
 ---
 
