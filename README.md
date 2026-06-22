@@ -172,7 +172,7 @@ sudo -u jenkins kubectl version --client
 sudo -u jenkins git --version
 ```
 ---
-#Add your new RHEL 10 agent to the Jenkins UI.
+# Add your new RHEL 10 agent to the Jenkins UI.
 
 ### 1. Get the Private Key (Run on Jenkins Master)
 Jenkins needs the **private** key to connect to the agent. Run this on your master to copy it:
