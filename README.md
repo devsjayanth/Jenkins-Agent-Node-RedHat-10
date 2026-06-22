@@ -5,15 +5,43 @@ Guide including kernel modules, sysctl, firewalld, and SELinux configurations re
 *Run on your **Jenkins Master/Controller**.*
 
 ```bash
+#Create the .ssh directory for Jenkins (if it doesn't exist)
+sudo mkdir -p /var/lib/jenkins/.ssh
+sudo chown jenkins:jenkins /var/lib/jenkins/.ssh
+sudo chmod 700 /var/lib/jenkins/.ssh
+```
+
+*(Note: If your Jenkins installation uses a different home directory, you can find it by running `getent passwd jenkins | cut -d: -f6` and replace `/var/lib/jenkins` in the commands above with that path).*
+
+```bash
 sudo su - jenkins
 ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""
 cat ~/.ssh/id_ed25519.pub
 ```
-*(Copy the output starting with `ssh-ed25519 AAAA...` for Step 7).*
+### 2. Configure Jenkins User & SSH Access
+```bash
+# Create user and add to docker group
+sudo useradd -m -s /bin/bash jenkins
+sudo usermod -aG docker jenkins
 
+# Setup SSH directory
+sudo mkdir -p /home/jenkins/.ssh
+sudo chmod 700 /home/jenkins/.ssh
+
+# Open the file in nano to add your public key
+sudo nano /home/jenkins/.ssh/authorized_keys
+```
+> **Inside nano:** Paste the public key copied in Step 1. 
+> Save: `Ctrl+O`, `Enter`. Exit: `Ctrl+X`.
+
+```bash
+# Fix permissions and ownership
+sudo chmod 600 /home/jenkins/.ssh/authorized_keys
+sudo chown -R jenkins:jenkins /home/jenkins/.ssh
+```
 ---
 
-### 2. System Prep & Kernel Modules (RHEL Node)
+### 3. System Prep & Kernel Modules (RHEL Node)
 *Run on your **Agent Node**.*
 
 ```bash
@@ -44,7 +72,7 @@ EOF
 sudo sysctl --system
 ```
 
-### 3. Firewalld & SELinux Configuration
+### 4. Firewalld & SELinux Configuration
 ```bash
 # Ensure SSH is allowed (usually default, but explicit is better)
 sudo firewall-cmd --permanent --add-service=ssh
@@ -60,14 +88,14 @@ sudo firewall-cmd --reload
 sudo setsebool -P container_manage_cgroup true
 ```
 
-### 4. Install Docker
+### 5. Install Docker
 ```bash
 sudo dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
 sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo systemctl enable --now docker
 ```
 
-### 5. Install Trivy
+### 6. Install Trivy
 ```bash
 sudo tee /etc/yum.repos.d/trivy.repo << 'EOF'
 [trivy]
@@ -80,7 +108,7 @@ EOF
 sudo dnf install -y trivy
 ```
 
-### 6. Install kubectl
+### 7. Install kubectl
 ```bash
 sudo tee /etc/yum.repos.d/kubernetes.repo <<'EOF'
 [kubernetes]
@@ -91,28 +119,6 @@ gpgcheck=1
 gpgkey=https://pkgs.k8s.io/core:/stable:/v1.32/rpm/repodata/repomd.xml.key
 EOF
 sudo dnf install -y kubectl
-```
-
-### 7. Configure Jenkins User & SSH Access
-```bash
-# Create user and add to docker group
-sudo useradd -m -s /bin/bash jenkins
-sudo usermod -aG docker jenkins
-
-# Setup SSH directory
-sudo mkdir -p /home/jenkins/.ssh
-sudo chmod 700 /home/jenkins/.ssh
-
-# Open the file in nano to add your public key
-sudo nano /home/jenkins/.ssh/authorized_keys
-```
-> **Inside nano:** Paste the public key copied in Step 1. 
-> Save: `Ctrl+O`, `Enter`. Exit: `Ctrl+X`.
-
-```bash
-# Fix permissions and ownership
-sudo chmod 600 /home/jenkins/.ssh/authorized_keys
-sudo chown -R jenkins:jenkins /home/jenkins/.ssh
 ```
 
 ### 8. Final Verification
