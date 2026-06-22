@@ -1,4 +1,4 @@
-# Jenkins-Agent-Node-Rhel-10
+# Jenkins-Agent-Node-RedHat10
 Guide including kernel modules, sysctl, firewalld, and SELinux configurations required for RHEL 10+.
 
 ### 1. Generate SSH Key on Jenkins Master
