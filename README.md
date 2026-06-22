@@ -63,6 +63,7 @@ If it connects without asking for a password, you are good to go! Type `exit` to
 # Update and install prerequisites (including extra kernel modules)
 sudo dnf update -y
 sudo dnf install -y nano git wget curl dnf-plugins-core kernel-modules-extra
+sudo dnf install -y java-17-openjdk
 
 # REBOOT REQUIRED to load the new kernel modules
 sudo reboot
