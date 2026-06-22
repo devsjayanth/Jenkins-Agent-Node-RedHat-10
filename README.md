@@ -50,9 +50,9 @@ sudo sysctl --system
 sudo firewall-cmd --permanent --add-service=ssh
 
 # Uncomment below if this node will host K8s workloads/services
-# sudo firewall-cmd --permanent --add-port=6443/tcp       # K8s API
-# sudo firewall-cmd --permanent --add-port=30000-32767/tcp # K8s NodePorts
-# sudo firewall-cmd --permanent --add-port=10250/tcp      # Kubelet API
+sudo firewall-cmd --permanent --add-port=6443/tcp       # K8s API
+sudo firewall-cmd --permanent --add-port=30000-32767/tcp # K8s NodePorts
+sudo firewall-cmd --permanent --add-port=10250/tcp      # Kubelet API
 
 sudo firewall-cmd --reload
 
