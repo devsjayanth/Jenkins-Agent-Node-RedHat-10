@@ -14,7 +14,7 @@ cat ~/.ssh/id_ed25519.pub
 ---
 
 ### 2. System Prep & Kernel Modules (RHEL Node)
-*Run on your **new RHEL 10.2 VM**.*
+*Run on your **Agent Node**.*
 
 ```bash
 # Update and install prerequisites
