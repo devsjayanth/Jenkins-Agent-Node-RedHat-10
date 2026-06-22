@@ -1,60 +1,48 @@
-# Jenkins-Agent-Node-RedHat10
+# Jenkins Agent Node Setup (RHEL 10+)
 Guide including kernel modules, sysctl, firewalld, and SELinux configurations required for RHEL 10+.
 
-### 1. Generate SSH Key on Jenkins Master
-*Run on your **Jenkins Master/Controller**.*
+---
 
+## Part 1: Jenkins Master / Controller
+*Run these commands on your **Jenkins Master** to generate the SSH key.*
+
+### 1. Generate SSH Key
 ```bash
-# 1. Create the .ssh directory
+# Create .ssh directory
 sudo mkdir -p /var/lib/jenkins/.ssh
 sudo chown jenkins:jenkins /var/lib/jenkins/.ssh
 sudo chmod 700 /var/lib/jenkins/.ssh
 
-# 2. Generate the key directly as the jenkins user
+# Generate the key directly as the jenkins user
 sudo -u jenkins ssh-keygen -t ed25519 -f /var/lib/jenkins/.ssh/id_ed25519 -N ""
 
-# 3. Display the public key to copy it
+# Display the public key
 sudo cat /var/lib/jenkins/.ssh/id_ed25519.pub
 ```
-(Copy the output starting with ssh-ed25519 AAAA...)
-### 2. Configure Jenkins User & SSH Access
-```bash
-# Create user and add to docker group
-sudo useradd -m -s /bin/bash jenkins
-sudo usermod -aG docker jenkins
+> **Action:** Copy the entire output (starts with `ssh-ed25519 AAAA...`) for use in Part 2, Step 4.
 
-# Setup SSH directory
-sudo mkdir -p /home/jenkins/.ssh
-sudo chmod 700 /home/jenkins/.ssh
-
-# Open the file in nano to add your public key
-sudo nano /home/jenkins/.ssh/authorized_keys
-```
-> **Inside nano:** Paste the public key copied in Step 1. 
-> Save: `Ctrl+O`, `Enter`. Exit: `Ctrl+X`.
-
-```bash
-# Fix permissions and ownership
-sudo chmod 600 /home/jenkins/.ssh/authorized_keys
-sudo chown -R jenkins:jenkins /home/jenkins/.ssh
-```
 ---
 
-### 3. System Prep & Kernel Modules (RHEL Node)
-*Run on your **Agent Node**.*
+## Part 2: RHEL 10 Agent Node
+*Run these commands on your **new RHEL 10 VM**.*
+
+### 1. System Prep & Kernel Modules
+```bash
+# Update and install prerequisites (including extra kernel modules)
+sudo dnf update -y
+sudo dnf install -y nano git wget curl dnf-plugins-core kernel-modules-extra
+
+# REBOOT REQUIRED to load the new kernel modules
+sudo reboot
+```
+*(Log back in after the reboot completes)*
 
 ```bash
-# Update and install prerequisites
-sudo dnf update -y
-sudo dnf install -y nano git wget curl dnf-plugins-core
-sudo dnf install -y kernel-modules-extra
-sudo reboot
-
-# Load required kernel modules immediately
+# Load required kernel modules
 sudo modprobe overlay
 sudo modprobe br_netfilter
 
-# Make kernel modules persistent across reboots
+# Make kernel modules persistent
 cat <<EOF | sudo tee /etc/modules-load.d/containerd.conf
 overlay
 br_netfilter
@@ -71,15 +59,15 @@ EOF
 sudo sysctl --system
 ```
 
-### 4. Firewalld & SELinux Configuration
+### 2. Firewalld & SELinux Configuration
 ```bash
-# Ensure SSH is allowed (usually default, but explicit is better)
+# Allow SSH
 sudo firewall-cmd --permanent --add-service=ssh
 
-# Uncomment below if this node will host K8s workloads/services
-sudo firewall-cmd --permanent --add-port=6443/tcp       # K8s API
-sudo firewall-cmd --permanent --add-port=30000-32767/tcp # K8s NodePorts
-sudo firewall-cmd --permanent --add-port=10250/tcp      # Kubelet API
+# Uncomment below ONLY if this node will host K8s workloads/services
+# sudo firewall-cmd --permanent --add-port=6443/tcp       
+# sudo firewall-cmd --permanent --add-port=30000-32767/tcp 
+# sudo firewall-cmd --permanent --add-port=10250/tcp      
 
 sudo firewall-cmd --reload
 
@@ -87,15 +75,14 @@ sudo firewall-cmd --reload
 sudo setsebool -P container_manage_cgroup true
 ```
 
-### 5. Install Docker
+### 3. Install Docker, Trivy, and kubectl
 ```bash
+# Install Docker
 sudo dnf config-manager --add-repo https://download.docker.com/linux/rhel/docker-ce.repo
 sudo dnf install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 sudo systemctl enable --now docker
-```
 
-### 6. Install Trivy
-```bash
+# Install Trivy
 sudo tee /etc/yum.repos.d/trivy.repo << 'EOF'
 [trivy]
 name=Trivy repository
@@ -105,10 +92,8 @@ enabled=1
 gpgkey=https://aquasecurity.github.io/trivy-repo/rpm/public.key
 EOF
 sudo dnf install -y trivy
-```
 
-### 7. Install kubectl
-```bash
+# Install kubectl
 sudo tee /etc/yum.repos.d/kubernetes.repo <<'EOF'
 [kubernetes]
 name=Kubernetes
@@ -120,14 +105,37 @@ EOF
 sudo dnf install -y kubectl
 ```
 
-### 8. Final Verification
+### 4. Configure Jenkins User & SSH Access
 ```bash
-sudo su - jenkins
+# Create user and add to docker group
+sudo useradd -m -s /bin/bash jenkins
+sudo usermod -aG docker jenkins
+
+# Fix home directory permissions (Crucial for SSH to accept keys)
+sudo chmod 755 /home/jenkins
+
+# Setup SSH directory
+sudo mkdir -p /home/jenkins/.ssh
+sudo chmod 700 /home/jenkins/.ssh
+
+# Open the file in nano to add your public key
+sudo nano /home/jenkins/.ssh/authorized_keys
 ```
-Verify
+> **Inside nano:** Paste the public key copied in Part 1. 
+> Save: `Ctrl+O`, `Enter`. Exit: `Ctrl+X`.
+
+```bash
+# Fix permissions, ownership, and SELinux context
+sudo chmod 600 /home/jenkins/.ssh/authorized_keys
+sudo chown -R jenkins:jenkins /home/jenkins/.ssh
+sudo restorecon -Rv /home/jenkins/.ssh
 ```
-docker ps
-trivy --version
-kubectl version --client
-git --version
+
+### 5. Final Verification
+```bash
+# Test tools as the jenkins user
+sudo -u jenkins docker ps
+sudo -u jenkins trivy --version
+sudo -u jenkins kubectl version --client
+sudo -u jenkins git --version
 ```
