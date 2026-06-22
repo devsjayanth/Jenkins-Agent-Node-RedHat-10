@@ -20,6 +20,8 @@ cat ~/.ssh/id_ed25519.pub
 # Update and install prerequisites
 sudo dnf update -y
 sudo dnf install -y nano git wget curl dnf-plugins-core
+sudo dnf install -y kernel-modules-extra
+sudo reboot
 
 # Load required kernel modules immediately
 sudo modprobe overlay
